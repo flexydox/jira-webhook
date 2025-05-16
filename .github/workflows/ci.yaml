@@ -25,6 +25,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+        # Parse the version from package.json
+        # Get major, minor, and use run id as build number
+        # return as output
+      - name: Get version from package.json
+        id: get_version
+        run: |
+          # Get the version from package.json
+          VERSION=$(jq -r '.version' package.json)
+          # Extract major and minor version
+          MAJOR_MINOR=$(echo $VERSION | cut -d '.' -f 1-2)
+          # Get the build number from the run ID
+          BUILD_NUMBER=${GITHUB_RUN_ID}
+          # Combine to form the full version
+          FULL_VERSION="${MAJOR_MINOR}.${BUILD_NUMBER}"
+          echo "Version: $FULL_VERSION"
+          echo "::set-output name=version::$FULL_VERSION"
+
       # Build and Push Docker image
       - name: Build and Push Docker image
         uses: docker/build-push-action@v4
@@ -32,3 +49,4 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/fxdx-jira-webhook:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fxdx-jira-webhook:${{ steps.get_version.outputs.version }}
