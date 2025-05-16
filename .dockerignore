@@ -1,0 +1,26 @@
+# Node.js dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Docker-specific files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Build output
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp
+*.tmp
