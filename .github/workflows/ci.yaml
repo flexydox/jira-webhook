@@ -36,8 +36,10 @@ jobs:
           BUILD_NUMBER=${GITHUB_RUN_NUMBER}
           # Combine to form the full version
           FULL_VERSION="${MAJOR_MINOR}.${BUILD_NUMBER}"
+
           echo "Version: $FULL_VERSION"
           echo "::set-output name=version::$FULL_VERSION"
+          echo "::set-output name=major_minor::$MAJOR_MINOR"
 
       # Build and Push Docker image
       - name: Build and Push Docker image
@@ -47,4 +49,5 @@ jobs:
           push: true
           tags: |
             flexydox/jira-webhook:latest
+            flexydox/jira-webhook:${{ steps.get_version.outputs.major_minor }}
             flexydox/jira-webhook:${{ steps.get_version.outputs.version }}
