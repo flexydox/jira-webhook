@@ -46,5 +46,5 @@ jobs:
           context: .
           push: true
           tags: |
-            flexydox/fxdx-jira-webhook:latest
-            flexydox/fxdx-jira-webhook:${{ steps.get_version.outputs.version }}
+            flexydox/jira-webhook:latest
+            flexydox/jira-webhook:${{ steps.get_version.outputs.version }}
