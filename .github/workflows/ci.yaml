@@ -46,5 +46,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/fxdx-jira-webhook:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/fxdx-jira-webhook:${{ steps.get_version.outputs.version }}
+            flexydox/fxdx-jira-webhook:latest
+            flexydox/fxdx-jira-webhook:${{ steps.get_version.outputs.version }}
