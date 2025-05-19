@@ -10,9 +10,11 @@ const PORT = process.env.PORT || 3000;
 
 function guardEnvVars() {
   const requiredVars = [
-    "GITHUB_TOKEN",
     "GITHUB_REPO_OWNER",
-    "GITHUB_REPO_NAME"
+    "GITHUB_REPO_NAME",
+    "GITHUB_APP_ID",
+    "GITHUB_PRIVATE_KEY",
+    "GITHUB_INSTALLATION_ID"
   ];
   let hasError = false;
   requiredVars.forEach((envVar) => {

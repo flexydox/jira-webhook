@@ -1,26 +1,24 @@
 import { Octokit } from "@octokit/rest";
+import { createAppAuth, createOAuthUserAuth } from "@octokit/auth-app";
 
-function guardEnvVars() {
-  const requiredVars = [
-    "GITHUB_TOKEN",
-    "GITHUB_REPO_OWNER",
-    "GITHUB_REPO_NAME"
-  ];
-  let hasError = false;
-  requiredVars.forEach((envVar) => {
-    if (!process.env[envVar]) {
-      console.error(`${envVar} not set in environment variables.`);
-      hasError = true;
+import { get } from "http";
+
+// 3) request a JWT for the App itself
+
+async function getOctokit() {
+  const appId = process.env.GITHUB_APP_ID || "";
+  const privateKey = process.env.GITHUB_PRIVATE_KEY || "";
+  const installationId = process.env.GITHUB_INSTALLATION_ID || "";
+
+  const octokit = new Octokit({
+    authStrategy: createAppAuth,
+    auth: {
+      appId,
+      privateKey,
+      installationId
     }
   });
-  if (hasError) {
-    console.error("Please set the required environment variables.");
-  }
-}
 
-function getOctokit() {
-  const githubToken = process.env.GITHUB_TOKEN;
-  const octokit = new Octokit({ auth: githubToken });
   return octokit;
 }
 
@@ -40,10 +38,9 @@ async function getIssueComments(
 }
 
 export async function runPRChecks(issueKey?: string | null) {
-  guardEnvVars();
   const prCheckRegexString = process.env.PR_CHECK_REGEX || ".*";
   const prCheckRegex = new RegExp(prCheckRegexString);
-  const octokit = getOctokit();
+  const octokit = await getOctokit();
   const owner = process.env.GITHUB_REPO_OWNER || "";
   const repo = process.env.GITHUB_REPO_NAME || "";
 
