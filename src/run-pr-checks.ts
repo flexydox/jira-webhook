@@ -77,29 +77,119 @@ export async function runPRChecks(issueKey?: string | null) {
         );
         continue;
       }
+      console.log(
+        `Re-running check: ${check.name} ${check.id} for PR #${pr.number}, commit: ${pr.head.sha}`
+      );
 
-      // Re-run each check suite (if supported)
-      if (check.check_suite && check.check_suite.id) {
-        try {
-          await octokit.checks.rerequestSuite({
+      // list actions for the check
+      const { data: actions } = await octokit.actions.listWorkflowRunsForRepo({
+        owner,
+        repo,
+        branch: pr.head.ref,
+        check_name: check.name,
+        status: "completed"
+      });
+
+      for (const workflowRun of actions.workflow_runs) {
+        if (
+          workflowRun.head_sha !== pr.head.sha ||
+          workflowRun.status !== "completed"
+        ) {
+          continue;
+        }
+        console.log(
+          `Re-running workflow run: ${workflowRun.name} ${workflowRun.id} for PR #${pr.number}, commit: ${pr.head.sha}`
+        );
+        const { data: jobsResult } =
+          await octokit.actions.listJobsForWorkflowRun({
             owner,
             repo,
-            check_suite_id: check.check_suite.id
+            run_id: workflowRun.id
           });
+        const jobNameOk = jobsResult.jobs.some((job) => {
+          return prCheckRegex.test(job.name);
+        });
+        if (!jobNameOk) {
           console.log(
-            `Re-requested check suite for PR #${pr.number}, check: ${check.name}`
+            `Skipping workflow run: ${workflowRun.name} ${
+              workflowRun.id
+            } for PR #${pr.number}, commit: ${
+              pr.head.sha
+            }, jobs: ${jobsResult.jobs
+              .map((j) => j.name)
+              .join(",")} as the job name does not match the regex.`
           );
+          continue;
+        }
+        try {
+          await octokit.actions.reRunWorkflow({
+            owner,
+            repo,
+            run_id: workflowRun.id
+          });
         } catch (err) {
           console.error(
-            `Failed to re-run check for PR #${pr.number}, check: ${check.name}`,
+            `Failed to re-run workflow run: ${workflowRun.name} ${workflowRun.id} for PR #${pr.number}, commit: ${pr.head.sha}`,
             err
           );
         }
-      } else {
-        console.warn(
-          `No check_suite found for check: ${check.name} on PR #${pr.number}`
-        );
+        // await octokit.actions.reRunWorkflow({
+        //   owner,
+        //   repo,
+        //   run_id: workflowRun.id
+        // });
       }
+      // // Re-run each check suite (if supported)
+      // if (check.check_suite && check.check_suite.id) {
+      //   const checkSuiteId = check.check_suite.id;
+
+      //   try {
+      //     const { data: runs } = await octokit.request(
+      //       "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs",
+      //       {
+      //         owner,
+      //         repo,
+      //         check_suite_id: checkSuiteId
+      //       }
+      //     );
+      //     if (runs.check_runs.length > 0) {
+      //       console.log(
+      //         `Re-running check suite for PR #${pr.number}, check: ${check.name}`
+      //       );
+      //       for (const run of runs.check_runs) {
+      //         console.log(
+      //           `Re-running check run: ${run.name} for PR #${pr.number}, check: ${check.name}`
+      //         );
+      //         await octokit.checks.rerequestRun({
+      //           owner,
+      //           repo,
+      //           check_run_id: run.id
+      //         });
+      //       }
+      //     } else {
+      //       console.warn(
+      //         `No check runs found for check suite ID: ${checkSuiteId} on PR #${pr.number}`
+      //       );
+      //     }
+      //     await octokit.checks.rerequestSuite({
+      //       owner,
+      //       repo,
+      //       check_suite_id: check.check_suite.id
+      //     });
+      //     console.log(
+      //       `Re-requested check suite for PR #${pr.number}, check: ${check.name}`
+      //     );
+      //   } catch (err) {
+      //     console.error(
+      //       `Failed to re-run check for PR #${pr.number}, check: ${check.name}`,
+      //       err
+      //     );
+      //   }
+      // } else {
+      //   console.warn(
+      //     `No check_suite found for check: ${check.name} on PR #${pr.number}`
+      //   );
+      // }
     }
   }
 }
